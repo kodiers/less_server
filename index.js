@@ -6,6 +6,17 @@ const config = require('./config/local');
 const userRoutes = require('./routes/user');
 
 
+mongoose.connect(config.DB_URI, {
+    "auth": { "authSource": 'admin' },
+    "user": config.user,
+    "pass": config.password,
+    useCreateIndex: true,
+    useNewUrlParser: true
+}).then(function () {
+    console.log('connected to db');
+});
+
+
 const app = express();
 
 app.use(bodyParser.json());
