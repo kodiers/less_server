@@ -1,5 +1,7 @@
+const jwt = require('jsonwebtoken');
 const helpers = require('../helpers/functions');
 const User = require('../models/user');
+const config = require('../config/local');
 
 // User registration controller
 exports.register = function (req, res) {
@@ -32,5 +34,30 @@ exports.register = function (req, res) {
             }
             return res.json({username: newUser.username, _id: newUser._id});
         });
+    });
+};
+
+// User login controller
+exports.login = function (req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+    if (!helpers.checkStringNotEmpty(username) || !helpers.checkStringNotEmpty(password)) {
+        return res.status(400).send({error: {title: 'Username or password is empty!', detail: 'Provide username and password'}});
+    }
+    User.findOne({username: username}, function (error, user) {
+        if (error) {
+            return res.status(500).send({error: {title: 'Database error!', detail: 'Something wrong when query database!'}});
+        }
+        if (!user) {
+            return res.status(401).send({error: {title: 'User does not exists!', detail: 'Could not find user in database!'}});
+        }
+        if (user.hasSamePassword(password)) {
+            const token = jwt.sign({
+                userId: user.id,
+                username: user.username
+            }, config.secret_key, { expiresIn: config.tokenExpiration });
+            return res.json({'token': token});
+        }
+        return res.status(401).send({error: {title: 'Incorrect password!', detail: 'Provide correct password for user!'}});
     });
 };
